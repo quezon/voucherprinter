@@ -12,5 +12,6 @@
   	<module>ModuleComponentsJavaFX_Controller</module>
   	<module>ModuleComponentsJavaFX_Service</module>
   	<module>ModuleComponentsJavaFX_Lambda</module>
+  	<module>ModuleComponentsRestEasyClient</module>
   </modules>
 </project>

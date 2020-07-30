@@ -1,15 +1,26 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>com.ex</groupId>
-    <artifactId>ModuleComponents</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-  </parent>
-  <artifactId>ModuleComponentsSpring</artifactId>
-  <packaging>pom</packaging>
-  <name>Spring Components Module</name>
-  <modules>
-  	<module>ModuleComponentsSpring_Domain</module>
-  	<module>ModuleComponentsSpring_Repository</module>
-  </modules>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.ex</groupId>
+		<artifactId>ModuleComponents</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+	<artifactId>ModuleComponentsSpring</artifactId>
+	<packaging>pom</packaging>
+	<name>Spring Components Module</name>
+	<modules>
+		<module>ModuleComponentsSpring_Domain</module>
+		<module>ModuleComponentsSpring_Repository</module>
+		<module>ModuleComponentsSpring_Service</module>
+		<module>ModuleComponentsSpring_Controller</module>
+	</modules>
+	<dependencies>
+<!-- 		<dependency> -->
+<!-- 			<groupId>com.ex</groupId> -->
+<!-- 			<artifactId>ModuleComponents_RestEasyClient</artifactId> -->
+<!-- 			<version>0.0.1-SNAPSHOT</version> -->
+<!-- 		</dependency> -->
+	</dependencies>
 </project>

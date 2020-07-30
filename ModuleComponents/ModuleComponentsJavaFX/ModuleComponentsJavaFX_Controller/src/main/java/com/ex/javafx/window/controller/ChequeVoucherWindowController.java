@@ -6,11 +6,12 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ResourceBundle;
 
-import com.ex.dto.Cheque;
-import com.ex.dto.ChequeVoucher;
-import com.ex.dto.Credit;
-import com.ex.dto.Debit;
-import com.ex.dto.Particular;
+import com.ex.entity.ChequeVoucher;
+import com.ex.entity.Credit;
+import com.ex.entity.Debit;
+import com.ex.entity.Particular;
+import com.ex.entity.VoucherEnum;
+import com.ex.entity.cheque.Cheque;
 import com.ex.javafx.ReadProperties;
 import com.ex.javafx.binding.DisableVoucherButtons;
 import com.ex.javafx.callback.UnselectRowCallback;
@@ -19,9 +20,11 @@ import com.ex.javafx.data.PayeeList;
 import com.ex.javafx.listener.AmountChangeListener;
 import com.ex.javafx.listener.DCChoiceBoxChangeListener;
 import com.ex.javafx.listener.DCTableSelectionChangeListener;
-import com.ex.javafx.service.ChequeService;
-import com.ex.javafx.service.VoucherService;
 import com.ex.javafx.window.SceneBuilder;
+import com.ex.resteasy.client.service.ChequeService;
+import com.ex.resteasy.client.service.DocumentService;
+import com.ex.resteasy.client.service.PrintingService;
+import com.ex.resteasy.client.service.VoucherService;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
@@ -43,9 +46,11 @@ import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 
 public class ChequeVoucherWindowController implements Initializable {
-	ChequeService cs = new ChequeService();
 	ChequeVoucher chv = new ChequeVoucher();
-	VoucherService<ChequeVoucher> vs = new VoucherService<ChequeVoucher>(chv);
+	ChequeService chequeService = new ChequeService();
+	DocumentService docService = new DocumentService();
+	PrintingService printingService = new PrintingService();
+	VoucherService<ChequeVoucher> voucherService = new VoucherService<ChequeVoucher>(chv);
 
 	// observable values
 	// aggregate value observables
@@ -177,8 +182,6 @@ public class ChequeVoucherWindowController implements Initializable {
 		creditAmount.setCellValueFactory(new PropertyValueFactory<Credit, Double>("amount"));
 		creditTable.setItems(credits);
 
-//		amountPayment.textProperty()
-//				.addListener(new AmountChangeListener(totalPayments, amountPayment, "\\d{0,7}([\\.]\\d{0,2})?"));
 		amountParticular.textProperty()
 				.addListener(new AmountChangeListener(amountParticular, "\\d{0,7}([\\.]\\d{0,2})?"));
 		amountJE.textProperty().addListener(new AmountChangeListener(amountJE, "\\d{0,7}([\\.]\\d{0,2})?"));
@@ -218,9 +221,6 @@ public class ChequeVoucherWindowController implements Initializable {
 	}
 
 	public void addParticular(MouseEvent event) {
-		System.out.println(voucherDate.valueProperty().get());
-		System.out.println(payeeBox.valueProperty().get());
-
 		String particularText = amountParticular.getText() == null || amountParticular.getText().length() == 0 ? "0.0"
 				: amountParticular.getText();
 		double particularAmount = Double.parseDouble(particularText);
@@ -356,11 +356,18 @@ public class ChequeVoucherWindowController implements Initializable {
 	}
 
 	public void saveVoucher(MouseEvent event) throws IOException {
+		boolean writtenToFile;
 		ZonedDateTime zdt = voucherDate.getValue().atStartOfDay(ZoneId.systemDefault());
-		Long voucherId = vs.saveVoucher(particulars, debits, credits, zdt, payeeBox.getValue());
+		ChequeVoucher chequeVoucher = voucherService.saveVoucher(particulars, debits, credits, cheques
+				,zdt ,payeeBox.getValue());
 
-		if (voucherId != null) {
-			calert.showInfoAlert("Voucher saved", "Saved Cheque Voucher with id of " + voucherId);
+		do {
+			writtenToFile = docService.saveVoucherToFile(chequeVoucher);
+			writtenToFile = writtenToFile && chequeService.writeChequeToPDFs(chequeVoucher.getCheques());
+		} while (!writtenToFile);
+
+		if (chequeVoucher != null) {
+			calert.showInfoAlert("Voucher saved", "Saved Cheque Voucher with id of " + chequeVoucher.getId());
 			new SceneBuilder().run(ReadProperties.fxmlchv, (Stage) saveBtn.getScene().getWindow());
 		} else {
 			calert.showInfoAlert("Voucher unsaved", "Please try hitting save button again");
@@ -368,27 +375,39 @@ public class ChequeVoucherWindowController implements Initializable {
 	}
 
 	public void savePrintVoucher(MouseEvent event) {
+		boolean writtenToFile;
 		ZonedDateTime zdt = voucherDate.getValue().atStartOfDay(ZoneId.systemDefault());
-		Long voucherId = vs.saveVoucher(particulars, debits, credits, zdt, payeeBox.getValue());
-		if (voucherId != null) {
-			calert.showInfoAlert("Voucher saved", "Saved Cash Voucher with id of " + voucherId);
+		ChequeVoucher chequeVoucher = voucherService.saveVoucher(particulars, debits, credits, cheques
+				,zdt ,payeeBox.getValue());
+		
+		do {
+			writtenToFile = docService.saveVoucherToFile(chequeVoucher);
+			writtenToFile = writtenToFile && chequeService.writeChequeToPDFs(chequeVoucher.getCheques());
+		} while (!writtenToFile);
+		
+		if (chequeVoucher != null) {
+			calert.showInfoAlert("Voucher saved", "Saved Cash Voucher with id of " + chequeVoucher.getId());
 			calert.showConfAlert("Voucher printing", "Are you sure you want to print voucher?").showAndWait()
-			.ifPresent(type -> {
-				if (type == ButtonType.OK) {
-					calert.showInfoAlert("Voucher printing", "Please insert paper before pressing OK");
-					try {
-						if (vs.printVoucher(voucherId)) {
-							calert.showInfoAlert("Voucher printed successfully", "Press OK to Clear Fields");
-						} else {
-							calert.showInfoAlert("Voucher not printed, but saved", "Press OK to Clear Fields");
+				.ifPresent(type -> {
+					if (type == ButtonType.OK) {
+						calert.showInfoAlert("Voucher printing", "Please insert paper before pressing OK");
+						try {
+							if (printingService.printDocument(ReadProperties.parentFolder_voucher,
+									VoucherEnum.getFileNameByClazz(chequeVoucher.getClass()),
+									chequeVoucher.getId())) {
+								calert.showInfoAlert("Voucher printed successfully",
+										"Press OK to Clear Fields");
+							} else {
+								calert.showInfoAlert("Voucher not printed, but saved",
+										"Press OK to Clear Fields");
+							}
+							new SceneBuilder().run(ReadProperties.fxmlcav,
+									(Stage) savePrintBtn.getScene().getWindow());
+						} catch (IOException e) {
 						}
-						new SceneBuilder().run(ReadProperties.fxmlcav, (Stage) savePrintBtn.getScene().getWindow());
-					} catch (IOException e) {
+					} else if (type == ButtonType.NO) {
 					}
-				} else if (type == ButtonType.NO) {
-				}
-			});
-
+				});
 		}
 	}
 

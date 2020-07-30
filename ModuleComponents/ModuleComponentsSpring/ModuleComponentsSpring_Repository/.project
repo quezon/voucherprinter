@@ -3,6 +3,7 @@
 	<name>ModuleComponentsSpring_Repository</name>
 	<comment></comment>
 	<projects>
+		<project>ModuleComponentsSpring_Domain</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

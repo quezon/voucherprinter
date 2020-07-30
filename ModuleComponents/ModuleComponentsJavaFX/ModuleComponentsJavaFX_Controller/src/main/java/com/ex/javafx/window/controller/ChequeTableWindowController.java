@@ -5,8 +5,12 @@ import java.util.ConcurrentModificationException;
 import java.util.ResourceBundle;
 import java.util.TreeSet;
 
-import com.ex.dto.ChequeOfVoucher;
+import com.ex.entity.cheque.ChequeOfVoucher;
+import com.ex.javafx.ReadProperties;
 import com.ex.javafx.control.CheckBoxColumnFactory;
+import com.ex.javafx.control.CustomAlert;
+import com.ex.resteasy.client.service.ChequeService;
+import com.ex.resteasy.client.service.PrintingService;
 
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -15,10 +19,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableColumn;
@@ -27,12 +28,11 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 
 public class ChequeTableWindowController implements Initializable {
+	ChequeService chequeService = new ChequeService();
+	PrintingService printingService = new PrintingService();
 	ObservableList<ChequeOfVoucher> cheques = FXCollections.observableArrayList();
 	ObservableSet<Long> selectedRows = FXCollections.observableSet(new TreeSet<Long>());
-	Alert infoAlert = new Alert(AlertType.INFORMATION);
-	Alert confAlert = new Alert(Alert.AlertType.CONFIRMATION);
-	ButtonType okButton = new ButtonType("Yes", ButtonData.YES);
-	ButtonType noButton = new ButtonType("No", ButtonData.NO);
+	CustomAlert calert = new CustomAlert();
 	@FXML
 	private TableView<ChequeOfVoucher> chequeTable;
 
@@ -107,30 +107,34 @@ public class ChequeTableWindowController implements Initializable {
 	}
 
 	public void printCheques(MouseEvent event) {
-		Alert alert;
 		try {
 			for (ChequeOfVoucher cheque : cheques) {
 				if (selectedRows.contains(cheque.getId())) {
-					String confMessage = String.format(
-							"Are you sure you want to print\ncheque number %s of %s with routing number of %s?",
+					String confMessage = String.format(ReadProperties.printConfCheque,
 							cheque.getChequeNumber(), cheque.getBankName(), cheque.getBankRoutingNumber());
-					String infoMessage = String.format("Please load cheque number %s of %s with routing number of %s",
+					String infoMessage = String.format(ReadProperties.printInfoCheque,
 							cheque.getChequeNumber(), cheque.getBankName(), cheque.getBankRoutingNumber());
-					alert = showConfAlert("Printing cheque", confMessage);
-					alert.showAndWait().ifPresent(type -> {
+					calert.showConfAlert("Printing cheque", confMessage)
+					.showAndWait().ifPresent(type -> {
 						if (type == ButtonType.OK) {
-							showInfoAlert("Printing cheque", infoMessage);
+							calert.showInfoAlert("Printing cheque", infoMessage);
 							cheque.setPrinted(true);
-							selectedRows.remove(cheque.getId());
-							// call rest api
-							Platform.runLater(() -> {
-								cheques.remove(cheque);
-							});
+							if (
+								printingService.printDocument(
+								ReadProperties.parentFolder_cheque,
+								"cheque.pdf", cheque.getId())) {
+								selectedRows.remove(cheque.getId());
+								
+								Platform.runLater(() -> {
+									cheques.remove(cheque);
+								});
+							}
 						} else if (type == ButtonType.NO) {
 						}
 					});
 				}
 			}
+			chequeService.saveCheques(cheques);
 		} catch (ConcurrentModificationException ex) {
 
 		}
@@ -138,9 +142,9 @@ public class ChequeTableWindowController implements Initializable {
 	}
 
 	public void voidCheques(MouseEvent event) {
-		Alert alert = showConfAlert("Voiding cheques", "Are you sure you want to void the selected cheques?");
 		try {
-			alert.showAndWait().ifPresent(type -> {
+			calert.showConfAlert("Voiding cheques", "Are you sure you want to void the selected cheques?")
+			.showAndWait().ifPresent(type -> {
 				if (type == ButtonType.OK) {
 					for (ChequeOfVoucher cheque : cheques) {
 						if (selectedRows.contains(cheque.getId())) {
@@ -152,48 +156,38 @@ public class ChequeTableWindowController implements Initializable {
 							});
 						}
 					}
+					chequeService.saveCheques(cheques);
 				} else if (type == ButtonType.NO) {
 				}
 			});
-			showInfoAlert("Voided cheques", "Cheques selected successfully voided.");
+			calert.showInfoAlert("Voided cheques", "Cheques selected successfully voided.");
 		} catch (ConcurrentModificationException ex) {
 
 		}
 	}
 
 	public void sendCheques(MouseEvent event) {
-		Alert alert = showConfAlert("Sending cheques", "Are you sure you want to send the selected cheques?");
 		try {
-			alert.showAndWait().ifPresent(type -> {
+			calert.showConfAlert("Sending cheques", "Are you sure you want to send the selected cheques?")
+			.showAndWait().ifPresent(type -> {
 				if (type == ButtonType.OK) {
 					for (ChequeOfVoucher cheque : cheques) {
 						if (selectedRows.contains(cheque.getId())) {
-							cheque.setPrinted(true);
+							cheque.setSent(true);
 							selectedRows.remove(cheque.getId());
-							// call rest api
+
 							Platform.runLater(() -> {
 								cheques.remove(cheque);
 							});
 						}
 					}
+					chequeService.saveCheques(cheques);
 				} else if (type == ButtonType.NO) {
 				}
 			});
-			showInfoAlert("Cheques approved for sending", "Cheques selected successfully marked for sending.");
+			calert.showInfoAlert("Cheques approved for sending", "Cheques selected successfully marked for sending.");
 		} catch (ConcurrentModificationException ex) {
 
 		}
-	}
-
-	public void showInfoAlert(String title, String header) {
-		infoAlert.setTitle(title);
-		infoAlert.setHeaderText(header);
-		infoAlert.showAndWait();
-	}
-
-	public Alert showConfAlert(String title, String header) {
-		confAlert.setTitle(title);
-		confAlert.setHeaderText(header);
-		return confAlert;
 	}
 }

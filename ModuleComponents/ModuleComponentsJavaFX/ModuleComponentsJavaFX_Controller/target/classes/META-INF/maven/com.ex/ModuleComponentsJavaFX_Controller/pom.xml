@@ -13,7 +13,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.ex</groupId>
-			<artifactId>ModuleComponentsJavaFX_Service</artifactId>
+			<artifactId>ModuleComponentsRestEasyClient</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>

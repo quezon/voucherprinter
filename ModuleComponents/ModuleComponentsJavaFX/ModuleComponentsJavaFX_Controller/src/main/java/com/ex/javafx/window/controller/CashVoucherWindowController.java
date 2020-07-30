@@ -6,10 +6,11 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ResourceBundle;
 
-import com.ex.dto.CashVoucher;
-import com.ex.dto.Credit;
-import com.ex.dto.Debit;
-import com.ex.dto.Particular;
+import com.ex.entity.CashVoucher;
+import com.ex.entity.Credit;
+import com.ex.entity.Debit;
+import com.ex.entity.Particular;
+import com.ex.entity.VoucherEnum;
 import com.ex.javafx.ReadProperties;
 import com.ex.javafx.binding.DisableVoucherButtons;
 import com.ex.javafx.callback.UnselectRowCallback;
@@ -18,8 +19,10 @@ import com.ex.javafx.data.PayeeList;
 import com.ex.javafx.listener.AmountChangeListener;
 import com.ex.javafx.listener.DCChoiceBoxChangeListener;
 import com.ex.javafx.listener.DCTableSelectionChangeListener;
-import com.ex.javafx.service.VoucherService;
 import com.ex.javafx.window.SceneBuilder;
+import com.ex.resteasy.client.service.DocumentService;
+import com.ex.resteasy.client.service.PrintingService;
+import com.ex.resteasy.client.service.VoucherService;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
@@ -42,8 +45,9 @@ import javafx.stage.Stage;
 
 public class CashVoucherWindowController implements Initializable {
 	CashVoucher cav = new CashVoucher();
-	VoucherService<CashVoucher> vs = new VoucherService<CashVoucher>(cav);
-
+	VoucherService<CashVoucher> voucherService = new VoucherService<CashVoucher>(cav);
+	DocumentService docService = new DocumentService();
+	PrintingService printingService = new PrintingService();
 	// observable values
 	// aggregate value observables
 	DoubleProperty totalPayments = new SimpleDoubleProperty(0.0);
@@ -206,9 +210,6 @@ public class CashVoucherWindowController implements Initializable {
 	}
 
 	public void addParticular(MouseEvent event) {
-		System.out.println(voucherDate.valueProperty().get());
-		System.out.println(payeeBox.valueProperty().get());
-
 		String particularText = amountParticular.getText() == null || amountParticular.getText().length() == 0 ? "0.0"
 				: amountParticular.getText();
 		double particularAmount = Double.parseDouble(particularText);
@@ -344,27 +345,41 @@ public class CashVoucherWindowController implements Initializable {
 	}
 
 	public void saveVoucher(MouseEvent event) throws IOException {
+		boolean writtenToFile;
 		ZonedDateTime zdt = voucherDate.getValue().atStartOfDay(ZoneId.systemDefault());
-		Long voucherId = vs.saveVoucher(particulars, debits, credits, zdt, payeeBox.getValue());
-		if (voucherId != null) {
-			calert.showInfoAlert("Voucher saved", "Saved Cash Voucher with id of " + voucherId);
+		CashVoucher cashVoucher = voucherService.saveVoucher(particulars, debits, credits, zdt, payeeBox.getValue());
+		
+		do {
+			writtenToFile = docService.saveVoucherToFile(cashVoucher);
+		} while (!writtenToFile);
+		
+		if (cashVoucher != null) {
+			calert.showInfoAlert("Voucher saved", "Saved Cash Voucher with id of " + cashVoucher.getId());
 			new SceneBuilder().run(ReadProperties.fxmlcav, (Stage) saveBtn.getScene().getWindow());
 		} else {
 			calert.showInfoAlert("Voucher unsaved", "Please try hitting save button again");
-		}
+		}		
 	}
 
 	public void savePrintVoucher(MouseEvent event) {
+		boolean writtenToFile;
 		ZonedDateTime zdt = voucherDate.getValue().atStartOfDay(ZoneId.systemDefault());
-		Long voucherId = vs.saveVoucher(particulars, debits, credits, zdt, payeeBox.getValue());
-		if (voucherId != null) {
-			calert.showInfoAlert("Voucher saved", "Saved Cash Voucher with id of " + voucherId);
+		CashVoucher cashVoucher = voucherService.saveVoucher(particulars, debits, credits, zdt, payeeBox.getValue());
+		do {
+			writtenToFile = docService.saveVoucherToFile(cashVoucher);
+		} while (!writtenToFile);
+		
+		if (cashVoucher != null) {
+			calert.showInfoAlert("Voucher saved", "Saved Cash Voucher with id of " + cashVoucher.getId());
 			calert.showConfAlert("Voucher printing", "Are you sure you want to print voucher?").showAndWait()
 			.ifPresent(type -> {
 				if (type == ButtonType.OK) {
 					calert.showInfoAlert("Voucher printing", "Please insert paper before pressing OK");
 					try {
-						if (vs.printVoucher(voucherId)) {
+						if (printingService.printDocument(
+								ReadProperties.parentFolder_voucher, 
+								VoucherEnum.getFileNameByClazz(cashVoucher.getClass()), 
+								cashVoucher.getId())) {
 							calert.showInfoAlert("Voucher printed successfully", "Press OK to Clear Fields");
 						} else {
 							calert.showInfoAlert("Voucher not printed, but saved", "Press OK to Clear Fields");
@@ -376,7 +391,11 @@ public class CashVoucherWindowController implements Initializable {
 				}
 			});
 
+		} else {
+			calert.showInfoAlert("Voucher unsaved", "Please try hitting save button again");
 		}
+		
+		
 	}
 
 }

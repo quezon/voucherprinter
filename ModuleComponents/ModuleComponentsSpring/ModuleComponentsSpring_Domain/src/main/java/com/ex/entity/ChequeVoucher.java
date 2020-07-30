@@ -4,6 +4,8 @@ import java.util.List;
 
 import javax.persistence.Entity;
 
+import com.ex.entity.cheque.Cheque;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

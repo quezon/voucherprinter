@@ -15,6 +15,11 @@ public class ReadProperties {
 	public static String fxmlmnu;
 	public static String fxmlrgw;
 	public static String fxmllgw;
+	public static String parentFolder_voucher;
+	public static String parentFolder_cheque;
+	public static String printConfCheque;
+	public static String printInfoCheque;
+	
 	private static InputStream inputStream;
 	
 	static {
@@ -38,7 +43,10 @@ public class ReadProperties {
 			fxmlmnu = prop.getProperty("fxmlmnu");
 			fxmlrgw = prop.getProperty("fxmlrgw");
 			fxmllgw = prop.getProperty("fxmllgw");
-			
+			parentFolder_voucher = prop.getProperty("spring.voucher.parentFolder");
+			parentFolder_cheque = prop.getProperty("spring.cheque.parentFolder");
+			printConfCheque = prop.getProperty("printConfCheque");
+			printInfoCheque = prop.getProperty("printInfoCheque");
 		} catch (Exception e) {
 			
 		}

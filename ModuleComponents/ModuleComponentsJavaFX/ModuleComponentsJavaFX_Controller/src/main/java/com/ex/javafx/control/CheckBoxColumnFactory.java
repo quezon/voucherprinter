@@ -1,6 +1,6 @@
 package com.ex.javafx.control;
 
-import com.ex.dto.ChequeOfVoucher;
+import com.ex.entity.cheque.ChequeOfVoucher;
 
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;

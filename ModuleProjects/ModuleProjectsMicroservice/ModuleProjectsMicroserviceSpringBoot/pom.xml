@@ -8,4 +8,8 @@
   <artifactId>ModuleProjectsMicroserviceSpringBoot</artifactId>
   <packaging>pom</packaging>
   <name>Spring Boot Microservice Projects Module</name>
+  <modules>
+  	<module>ModuleProjectsMicroserviceSpringBoot_Cheque</module>
+  	<module>ModuleProjectsMicroserviceSpringBoot_Voucher</module>
+  </modules>
 </project>

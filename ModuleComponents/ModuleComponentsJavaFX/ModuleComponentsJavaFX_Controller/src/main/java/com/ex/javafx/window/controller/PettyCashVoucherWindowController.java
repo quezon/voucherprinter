@@ -6,10 +6,11 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ResourceBundle;
 
-import com.ex.dto.Credit;
-import com.ex.dto.Debit;
-import com.ex.dto.Particular;
-import com.ex.dto.PettyCashVoucher;
+import com.ex.entity.Credit;
+import com.ex.entity.Debit;
+import com.ex.entity.Particular;
+import com.ex.entity.PettyCashVoucher;
+import com.ex.entity.VoucherEnum;
 import com.ex.javafx.ReadProperties;
 import com.ex.javafx.binding.DisableVoucherButtons;
 import com.ex.javafx.callback.UnselectRowCallback;
@@ -18,8 +19,10 @@ import com.ex.javafx.data.PayeeList;
 import com.ex.javafx.listener.AmountChangeListener;
 import com.ex.javafx.listener.DCChoiceBoxChangeListener;
 import com.ex.javafx.listener.DCTableSelectionChangeListener;
-import com.ex.javafx.service.VoucherService;
 import com.ex.javafx.window.SceneBuilder;
+import com.ex.resteasy.client.service.DocumentService;
+import com.ex.resteasy.client.service.PrintingService;
+import com.ex.resteasy.client.service.VoucherService;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
@@ -42,7 +45,9 @@ import javafx.stage.Stage;
 
 public class PettyCashVoucherWindowController implements Initializable {
 	PettyCashVoucher pcv = new PettyCashVoucher();
-	VoucherService<PettyCashVoucher> vs = new VoucherService<PettyCashVoucher>(pcv);
+	DocumentService docService = new DocumentService();
+	VoucherService<PettyCashVoucher> voucherService = new VoucherService<PettyCashVoucher>(pcv);
+	PrintingService printingService = new PrintingService();
 	
 	// observable values
 	// aggregate value observables
@@ -344,10 +349,16 @@ public class PettyCashVoucherWindowController implements Initializable {
 	}
 
 	public void saveVoucher(MouseEvent event) throws IOException {
+		Boolean writtenToFile;
 		ZonedDateTime zdt = voucherDate.getValue().atStartOfDay(ZoneId.systemDefault());
-		Long voucherId = vs.saveVoucher(particulars, debits, credits, zdt, payeeBox.getValue());
-		if (voucherId != null) {
-			calert.showInfoAlert("Voucher saved", "Saved Petty Cash Voucher with id of " + voucherId);
+		PettyCashVoucher pettyCashVoucher = voucherService.saveVoucher(particulars, debits, credits, zdt, payeeBox.getValue());
+		
+		do {
+			writtenToFile = docService.saveVoucherToFile(pettyCashVoucher);
+		} while (!writtenToFile);
+		
+		if (pettyCashVoucher != null) {
+			calert.showInfoAlert("Voucher saved", "Saved Petty Cash Voucher with id of " + pettyCashVoucher.getId());
 			new SceneBuilder().run(ReadProperties.fxmlpcv, (Stage) saveBtn.getScene().getWindow());
 		} else {
 			calert.showInfoAlert("Voucher unsaved", "Please try hitting save button again");
@@ -355,16 +366,25 @@ public class PettyCashVoucherWindowController implements Initializable {
 	}
 
 	public void savePrintVoucher(MouseEvent event) {
+		Boolean writtenToFile;
 		ZonedDateTime zdt = voucherDate.getValue().atStartOfDay(ZoneId.systemDefault());
-		Long voucherId = vs.saveVoucher(particulars, debits, credits, zdt, payeeBox.getValue());
-		if (voucherId != null) {
-			calert.showInfoAlert("Voucher saved", "Saved Petty Cash Voucher with id of " + voucherId);
+		PettyCashVoucher pettyCashVoucher = voucherService.saveVoucher(particulars, debits, credits, zdt, payeeBox.getValue());
+		
+		do {
+			writtenToFile = docService.saveVoucherToFile(pettyCashVoucher);
+		} while (!writtenToFile);
+		
+		if (pettyCashVoucher != null) {
+			calert.showInfoAlert("Voucher saved", "Saved Petty Cash Voucher with id of " + pettyCashVoucher.getId());
 			calert.showConfAlert("Voucher printing", "Are you sure you want to print voucher?").showAndWait()
 			.ifPresent(type -> {
 				if (type == ButtonType.OK) {
 					calert.showInfoAlert("Voucher printing", "Please insert paper before pressing OK");
 					try {
-						if (vs.printVoucher(voucherId)) {
+						if (printingService.printDocument(
+								ReadProperties.parentFolder_voucher, 
+								VoucherEnum.getFileNameByClazz(pettyCashVoucher.getClass()), 
+								pettyCashVoucher.getId())) {
 							calert.showInfoAlert("Voucher printed successfully", "Press OK to Clear Fields");
 						} else {
 							calert.showInfoAlert("Voucher not printed, but saved", "Press OK to Clear Fields");
