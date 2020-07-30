@@ -1,0 +1,32 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.ex</groupId>
+		<artifactId>ModuleProjectsClient</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+	<groupId>com.ex</groupId>
+	<artifactId>ModuleProjectsClientJavaFX</artifactId>
+	<packaging>pom</packaging>
+	<name>JavaFX Client Projects</name>
+	<modules>
+		<module>ModuleProjectsClientJavaFX_Voucher</module>
+		<module>ModuleProjectsClientJavaFX_Cheque</module>
+	</modules>
+	<dependencies>
+		<!-- local dependencies -->
+		<dependency>
+			<groupId>com.ex</groupId>
+			<artifactId>ModuleComponentsJavaFX_Controller</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<!-- maven central dependencies -->
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-controls</artifactId>
+			<version>13.0.2</version>
+		</dependency>
+	</dependencies>
+</project>

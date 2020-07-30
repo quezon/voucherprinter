@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefHeight="336.0" prefWidth="672.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ex.javafx.window.controller.MainWindowController">
+  <children>
+      <HBox prefHeight="25.0" prefWidth="733.0">
+         <children>
+          <MenuBar prefHeight="25.0" prefWidth="672.0">
+            <menus>
+              <Menu mnemonicParsing="false" text="Account">
+                <items>
+                  <Menu mnemonicParsing="false" text="Admin">
+                           <items>
+                              <MenuItem mnemonicParsing="false" onAction="#manageUsers" text="Manage Users" />
+                           </items>
+                        </Menu>
+                        <MenuItem mnemonicParsing="false" onAction="#editMyAccount" text="Edit My Account" />
+                  <MenuItem mnemonicParsing="false" onAction="#logoutAccount" text="Logout" />
+                  <MenuItem mnemonicParsing="false" onAction="#closeApp" text="Quit" />
+                </items>
+              </Menu>
+                  <Menu mnemonicParsing="false" text="Settlement">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#clearCheques" text="Cheques" />
+                    </items>
+                  </Menu>
+                  <Menu mnemonicParsing="false" text="Vouchers">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#newCashVoucher" text="Cash Voucher" />
+                        <MenuItem mnemonicParsing="false" onAction="#newChequeVoucher" text="Cheque Voucher" />
+                        <MenuItem mnemonicParsing="false" onAction="#newPettyCashVoucher" text="Petty Cash Voucher" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" onAction="#listOfVouchers" text="List of Vouchers" />
+                    </items>
+                  </Menu>
+              <Menu mnemonicParsing="false" text="Help">
+                <items>
+                  <MenuItem mnemonicParsing="false" text="About Voucher App" />
+                        <MenuItem mnemonicParsing="false" onAction="#openWebpage" text="Step by Step Guide" />
+                </items>
+              </Menu>
+            </menus>
+          </MenuBar>
+         </children>
+      </HBox>
+    <SplitPane focusTraversable="true" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
+      <items>
+            <AnchorPane>
+               <children>
+                  <ImageView fx:id="chequeImageView" fitHeight="244.0" fitWidth="428.0" layoutX="115.0" layoutY="22.0" pickOnBounds="true" preserveRatio="true" />
+               </children>
+            </AnchorPane>
+      </items>
+    </SplitPane>
+    <HBox id="HBox" alignment="CENTER_LEFT" spacing="5.0" VBox.vgrow="NEVER">
+      <children>
+        <Label maxHeight="1.7976931348623157E308" maxWidth="-1.0" text="Left status" HBox.hgrow="ALWAYS">
+          <font>
+            <Font size="11.0" fx:id="x3" />
+          </font>
+          <textFill>
+            <Color blue="0.625" green="0.625" red="0.625" fx:id="x4" />
+          </textFill>
+        </Label>
+        <Pane prefHeight="-1.0" prefWidth="-1.0" HBox.hgrow="ALWAYS" />
+        <Label font="$x3" maxWidth="-1.0" text="Right status" textFill="$x4" HBox.hgrow="NEVER" />
+      </children>
+      <padding>
+        <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />
+      </padding>
+    </HBox>
+  </children>
+</VBox>
